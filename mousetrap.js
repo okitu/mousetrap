@@ -74,7 +74,7 @@
         107: '+',
         109: '-',
         110: '.',
-        111 : '/',
+        111: '/',
         186: ';',
         187: '=',
         188: ',',
@@ -392,13 +392,16 @@
      *
      * @param  {string} combination key combination ("command+s" or "a" or "*")
      * @param  {string=} action
+     * @param  {boolean} [useShiftMap=true]
      * @returns {Object}
      */
-    function _getKeyInfo(combination, action) {
+    function _getKeyInfo(combination, action, useShiftMap) {
         var keys;
         var key;
         var i;
         var modifiers = [];
+
+        useShiftMap = typeof(useShiftMap == 'boolean') ? useShiftMap : true;
 
         // take the keys from this pattern and figure out what the actual
         // pattern is all about
@@ -415,7 +418,7 @@
             // if this is not a keypress event then we should
             // be smart about using shift keys
             // this will only work for US keyboards however
-            if (action && action != 'keypress' && _SHIFT_MAP[key]) {
+            if (useShiftMap && action && action != 'keypress' && _SHIFT_MAP[key]) {
                 key = _SHIFT_MAP[key];
                 modifiers.push('shift');
             }
@@ -449,14 +452,16 @@
         return _belongsTo(element.parentNode, ancestor);
     }
 
-    function Mousetrap(targetElement) {
+    function Mousetrap(targetElement, options) {
         var self = this;
 
         targetElement = targetElement || document;
 
         if (!(self instanceof Mousetrap)) {
-            return new Mousetrap(targetElement);
+            return new Mousetrap(targetElement, options);
         }
+
+        self.useShiftMap = options ? !!options.useShiftMap : true;
 
         /**
          * element to attach key events to
@@ -863,14 +868,16 @@
                 return;
             }
 
-            info = _getKeyInfo(combination, action);
+            info = _getKeyInfo(combination, action, self.useShiftMap);
 
             // make sure to initialize array if this is the first time
             // a callback is added for this key
             self._callbacks[info.key] = self._callbacks[info.key] || [];
 
             // remove an existing match if there is one
-            _getMatches(info.key, info.modifiers, {type: info.action}, sequenceName, combination, level);
+            _getMatches(info.key, info.modifiers, {
+                type: info.action
+            }, sequenceName, combination, level);
 
             // add this call back to the array
             // if it is a sequence put it at the beginning
@@ -913,7 +920,6 @@
             _removeEvent(targetElement, 'keyup', _handleKeyEvent);
             self.reset();
         };
- 
 
         // start!
         _addEvent(targetElement, 'keypress', _handleKeyEvent);
@@ -1050,7 +1056,7 @@
                     return function() {
                         return documentMousetrap[method].apply(documentMousetrap, arguments);
                     };
-                } (method));
+                }(method));
             }
         }
     };
@@ -1071,4 +1077,4 @@
             return Mousetrap;
         });
     }
-}) (typeof window !== 'undefined' ? window : null, typeof  window !== 'undefined' ? document : null);
+})(typeof window !== 'undefined' ? window : null, typeof window !== 'undefined' ? document : null);
